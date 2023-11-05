@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
+import matplotlib.pyplot as plt
 
 while True:
     if(tf.config.list_physical_devices('GPU') == []):
@@ -18,8 +19,85 @@ while True:
 
 
 train_set = tf.keras.utils.image_dataset_from_directory(
-    "Data\Train",
+    "Data/Train",
     labels="inferred",
     label_mode="categorical",
-    image_size=(100,100)
+    image_size=(100,100),
+    color_mode="rgb",
 )
+
+val_set = tf.keras.utils.image_dataset_from_directory(
+    "Data/Validation",
+    labels="inferred",
+    label_mode="categorical",
+    image_size=(100,100),
+    color_mode="rgb",
+)
+
+for images, labels in train_set.take(1):
+  for i in range(9):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(images[i].numpy().astype("uint8"))
+    label_index = tf.argmax(labels[i])
+    plt.title(train_set.class_names[label_index])
+    plt.axis("off")
+plt.show()
+
+print(train_set.class_names)
+
+AUTOTUNE = tf.data.AUTOTUNE
+
+train_set = train_set.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
+
+model = keras.Sequential([
+    layers.RandomRotation((-0.4,0.4), seed = 727),
+    layers.RandomTranslation((-0.2,0.2), (-0.2,0.2), seed = 727),
+    layers.RandomZoom((-0.5,0.2), seed = 727),
+
+    layers.Rescaling(1./255),
+
+    layers.Conv2D(32, 3, activation= 'relu'),
+    layers.MaxPooling2D(),
+
+    layers.Conv2D(32, 3, activation= 'relu'),
+    layers.MaxPooling2D(),
+
+    layers.Flatten(),
+    layers.Dense(4, activation='softmax'),
+])
+
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.CategoricalCrossentropy(),
+              metrics=['accuracy'])
+
+epochs=40
+history = model.fit(
+  train_set,
+  validation_data=val_set,
+  epochs=epochs
+)
+
+model.summary()
+
+
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs_range = range(epochs)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
