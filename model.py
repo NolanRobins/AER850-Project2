@@ -4,6 +4,7 @@ from tensorflow import keras
 from keras import layers
 import matplotlib.pyplot as plt
 
+
 while True:
     if(tf.config.list_physical_devices('GPU') == []):
         response = input("\033[93mGPU NOT DETECTED AND WILL NOT BE USED.\nPERFORMANCE MAY BE REDUCED. CONTINUE ANYWAYS?\033[0m \033[96m Y/[N]:\033[0m ")
@@ -34,14 +35,15 @@ val_set = tf.keras.utils.image_dataset_from_directory(
     color_mode="rgb",
 )
 
-for images, labels in train_set.take(1):
-  for i in range(9):
-    ax = plt.subplot(3, 3, i + 1)
-    plt.imshow(images[i].numpy().astype("uint8"))
-    label_index = tf.argmax(labels[i])
-    plt.title(train_set.class_names[label_index])
-    plt.axis("off")
-plt.show()
+# for images, labels in train_set.take(1):
+#   for i in range(9):
+#     ax = plt.subplot(3, 3, i + 1)
+#     plt.imshow(images[i].numpy().astype("uint8"))
+#     label_index = tf.argmax(labels[i])
+#     plt.title(train_set.class_names[label_index])
+#     plt.axis("off")
+# plt.show()
+
 
 print(train_set.class_names)
 
@@ -52,25 +54,31 @@ train_set = train_set.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 model = keras.Sequential([
     layers.RandomRotation((-0.4,0.4), seed = 727),
     layers.RandomTranslation((-0.2,0.2), (-0.2,0.2), seed = 727),
-    layers.RandomZoom((-0.5,0.2), seed = 727),
+    # layers.RandomBrightness((-0.5,0.5), seed = 727),
+    # layers.RandomZoom((-0.2,0.2), seed = 727),
 
     layers.Rescaling(1./255),
 
-    layers.Conv2D(32, 3, activation= 'relu'),
+    layers.Conv2D(16, 3, activation= 'relu'),
     layers.MaxPooling2D(),
 
     layers.Conv2D(32, 3, activation= 'relu'),
+    layers.MaxPooling2D(),
+
+    layers.Conv2D(64, 3, activation= 'relu'),
     layers.MaxPooling2D(),
 
     layers.Flatten(),
+    # layers.Dense(128, activation="relu"),
+    layers.Dropout(0.5),
     layers.Dense(4, activation='softmax'),
 ])
 
-model.compile(optimizer='adam',
+model.compile(optimizer=keras.optimizers.Adam(),
               loss=tf.keras.losses.CategoricalCrossentropy(),
               metrics=['accuracy'])
 
-epochs=40
+epochs=20
 history = model.fit(
   train_set,
   validation_data=val_set,
