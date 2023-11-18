@@ -3,6 +3,9 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 import matplotlib.pyplot as plt
+import tensorflow_datasets as tfds
+import PIL
+
 
 
 while True:
@@ -18,6 +21,13 @@ while True:
     else:
         break
 
+val_set = tf.keras.utils.image_dataset_from_directory(
+    "Data/Validation",
+    labels="inferred",
+    label_mode="categorical",
+    image_size=(100,100),
+    color_mode="rgb",
+)
 
 train_set = tf.keras.utils.image_dataset_from_directory(
     "Data/Train",
@@ -27,13 +37,19 @@ train_set = tf.keras.utils.image_dataset_from_directory(
     color_mode="rgb",
 )
 
-val_set = tf.keras.utils.image_dataset_from_directory(
-    "Data/Validation",
-    labels="inferred",
-    label_mode="categorical",
-    image_size=(100,100),
-    color_mode="rgb",
+sheared_data = tf.keras.preprocessing.image.random_shear(
+    tfds.as_numpy(train_set), 45
 )
+
+
+plt.figure(figsize=(10, 10))
+for images, labels in train_set.take(1):
+  for i in range(9):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(images[i].numpy().astype("uint8"))
+    plt.axis("off")
+
+plt.show()
 
 # for images, labels in train_set.take(1):
 #   for i in range(9):
@@ -51,10 +67,11 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 train_set = train_set.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 
+
 model = keras.Sequential([
     layers.RandomRotation((-0.4,0.4), seed = 727),
     layers.RandomTranslation((-0.2,0.2), (-0.2,0.2), seed = 727),
-    # layers.RandomBrightness((-0.5,0.5), seed = 727),
+    layers.RandomBrightness((-0.5,0.5), seed = 727),
     # layers.RandomZoom((-0.2,0.2), seed = 727),
 
     layers.Rescaling(1./255),
@@ -78,34 +95,34 @@ model.compile(optimizer=keras.optimizers.Adam(),
               loss=tf.keras.losses.CategoricalCrossentropy(),
               metrics=['accuracy'])
 
-epochs=20
-history = model.fit(
-  train_set,
-  validation_data=val_set,
-  epochs=epochs
-)
+# epochs=150
+# history = model.fit(
+#   train_set,
+#   validation_data=val_set,
+#   epochs=epochs
+# )
 
-model.summary()
+# model.summary()
 
 
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
+# acc = history.history['accuracy']
+# val_acc = history.history['val_accuracy']
 
-loss = history.history['loss']
-val_loss = history.history['val_loss']
+# loss = history.history['loss']
+# val_loss = history.history['val_loss']
 
-epochs_range = range(epochs)
+# epochs_range = range(epochs)
 
-plt.figure(figsize=(8, 8))
-plt.subplot(1, 2, 1)
-plt.plot(epochs_range, acc, label='Training Accuracy')
-plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-plt.legend(loc='lower right')
-plt.title('Training and Validation Accuracy')
+# plt.figure(figsize=(8, 8))
+# plt.subplot(1, 2, 1)
+# plt.plot(epochs_range, acc, label='Training Accuracy')
+# plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+# plt.legend(loc='lower right')
+# plt.title('Training and Validation Accuracy')
 
-plt.subplot(1, 2, 2)
-plt.plot(epochs_range, loss, label='Training Loss')
-plt.plot(epochs_range, val_loss, label='Validation Loss')
-plt.legend(loc='upper right')
-plt.title('Training and Validation Loss')
-plt.show()
+# plt.subplot(1, 2, 2)
+# plt.plot(epochs_range, loss, label='Training Loss')
+# plt.plot(epochs_range, val_loss, label='Validation Loss')
+# plt.legend(loc='upper right')
+# plt.title('Training and Validation Loss')
+# plt.show()
