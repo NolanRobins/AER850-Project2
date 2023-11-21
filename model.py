@@ -22,16 +22,14 @@ while True:
         break
 
 train_preprocessor = tf.keras.Sequential([
-    layers.RandomZoom((-0.5, 0.5), (-0.5, 0.5), seed = 852),
     layers.RandomTranslation(0, (-0.2,0.2), seed = 852),
     keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.2, seed = 852),
-    layers.GaussianNoise(0.5, seed = 727),
-
+    layers.GaussianNoise(0.2, seed = 727),
+    layers.RandomZoom((-0.15, 0.15), (-0.15, 0.15), fill_mode = "constant", seed = 852),
     # layers.RandomBrightness((0,0.5), seed = 852),
-    keras_cv.layers.RandomSharpness((0.8, 0.8), (0, 255), seed = 852),
-    # keras_cv.layers.Equalization((0, 255), 256),
-    keras_cv.layers.AutoContrast((0, 255)),
-    layers.Resizing(100, 100),
+    # keras_cv.layers.RandomSharpness((0.8, 0.8), (0, 255), seed = 852),
+    # keras_cv.layers.AutoContrast((0, 255)),
+    # layers.Resizing(100, 100),
     layers.Rescaling(1./255),
 ])
 
@@ -43,7 +41,7 @@ train_set = tf.keras.utils.image_dataset_from_directory(
     "Data/Train",
     labels="inferred",
     label_mode="categorical",
-    image_size=(300, 300),
+    image_size=(100, 100),
     color_mode="rgb",
     batch_size = BATCH_SIZE,
     seed = 852,
@@ -96,7 +94,11 @@ train_set = train_set.cache().shuffle(1600).prefetch(buffer_size=AUTOTUNE)
 
 
 model = keras.Sequential([
-    layers.Conv2D(256, 5, strides=(1, 1), activation= 'relu'),
+    layers.Conv2D(256, 2, strides=(1, 1), activation= 'relu'),
+    layers.MaxPooling2D(),
+    layers.Dropout(0.2),
+
+    layers.Conv2D(64, 2, strides=(1, 1), activation= 'relu'),
     layers.MaxPooling2D(),
     layers.Dropout(0.5),
 
@@ -120,7 +122,7 @@ model = keras.Sequential([
 ])
 
 optimizer=keras.optimizers.Adam()
-optimizer.learning_rate.assign(0.00005)
+optimizer.learning_rate.assign(0.0005)
 
 model.compile(optimizer=optimizer,
               loss=tf.keras.losses.CategoricalCrossentropy(),
