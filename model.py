@@ -22,12 +22,10 @@ while True:
         break
 
 train_preprocessor = tf.keras.Sequential([
-    # keras_cv.layers.RandomCropAndResize(target_size=(200, 200), crop_area_factor=(0, 1.0), aspect_ratio_factor=(0.9, 1.1), seed = 852),
     layers.RandomZoom((-0.5, 0.5), (-0.5, 0.5), seed = 852),
     layers.RandomTranslation(0, (-0.2,0.2), seed = 852),
     keras_cv.layers.RandomShear(x_factor=0.2, y_factor=0.2, seed = 852),
-    # layers.RandomRotation((-0.4,0.4), seed = 852),
-    
+    layers.GaussianNoise(0.5, seed = 727),
 
     # layers.RandomBrightness((0,0.5), seed = 852),
     keras_cv.layers.RandomSharpness((0.8, 0.8), (0, 255), seed = 852),
@@ -98,29 +96,31 @@ train_set = train_set.cache().shuffle(1600).prefetch(buffer_size=AUTOTUNE)
 
 
 model = keras.Sequential([
-    layers.Conv2D(256, 3, strides=(1, 1), activation= 'relu'),
+    layers.Conv2D(256, 5, strides=(1, 1), activation= 'relu'),
     layers.MaxPooling2D(),
+    layers.Dropout(0.5),
+
+    layers.Conv2D(64, 4, activation= 'leaky_relu'),
+    layers.MaxPooling2D(),
+    layers.Dropout(0.35),
 
     layers.Conv2D(64, 3, activation= 'relu'),
-    layers.MaxPooling2D(),
-
-    layers.Conv2D(32, 3, activation= 'relu'),
     layers.MaxPooling2D(),
     layers.Dropout(0.5),
 
     layers.Conv2D(64, 3, activation= 'relu'),
     layers.MaxPooling2D(),
-    
+   
 
     layers.Flatten(),
-    # layers.Dense(32, activation='relu'),
+    layers.Dense(256, activation='elu'),
     layers.Dropout(0.5),
 
     layers.Dense(4, activation='softmax')
 ])
 
 optimizer=keras.optimizers.Adam()
-optimizer.learning_rate.assign(0.0003)
+optimizer.learning_rate.assign(0.00005)
 
 model.compile(optimizer=optimizer,
               loss=tf.keras.losses.CategoricalCrossentropy(),
@@ -132,7 +132,7 @@ model.summary()
 
 # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.00001)
 
-epochs = 250
+epochs = 50
 history = model.fit(
   train_set,
   validation_data=val_set,
