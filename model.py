@@ -3,10 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers
 import matplotlib.pyplot as plt
-from keras.preprocessing.image import ImageDataGenerator
 import keras_cv
-import PIL
-from PIL import Image, ImageDraw, ImageFont
 import predict_model
 
 BATCH_SIZE = 32
@@ -52,11 +49,6 @@ def main():
         # interpolation = "nearest",
     )
 
-    print(train_set.class_names)
-    labels = train_set.class_names
-
-    train_set = train_set.map(lambda x, y: (train_preprocessor(x, training = True), y))
-
     val_set = tf.keras.utils.image_dataset_from_directory(
         "Data/Validation",
         labels="inferred",
@@ -68,34 +60,23 @@ def main():
         seed = 852,
     )
 
+    print(train_set.class_names)
+    labels = train_set.class_names
+
+    temp_train_set = train_set.map(lambda x, y: (val_preprocessor(x, training = True), y))
+    print_img(temp_train_set, "ModelOutput/datafig_unprocessed.png")
+    del temp_train_set
+
+
+    train_set = train_set.map(lambda x, y: (train_preprocessor(x, training = True), y))
     val_set = val_set.map(lambda x, y: (val_preprocessor(x), y))
 
 
-    for images, labels in train_set.take(1):
-        augmented_images = images.numpy()
-
-
-    plt.figure(figsize=(10, 10))
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(augmented_images[i])
-        plt.axis("off")
-    plt.savefig("ModelOutput/datafig.png")
-
-
-    for images, labels in val_set.take(1):
-        augmented_images = images.numpy()
-
-    plt.figure(figsize=(10, 10))
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(augmented_images[i])
-        plt.axis("off")
-    plt.savefig("ModelOutput/valfig.png")
+    print_img(train_set, "ModelOutput/datafig.png")
+    print_img(val_set, "ModelOutput/valfig.png")
 
 
     AUTOTUNE = tf.data.AUTOTUNE
-
     train_set = train_set.cache().shuffle(1600).prefetch(buffer_size=AUTOTUNE)
 
 
@@ -142,7 +123,7 @@ def main():
 
     # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.00001)
 
-    epochs = 60
+    epochs = 70
     history = model.fit(
     train_set,
     validation_data=val_set,
@@ -183,6 +164,19 @@ def main():
     predict_model.predict_image(model, "Data/Train/Medium/Crack__20180419_05_06_26,199.bmp")
     execute_predict()
     
+
+def print_img(set, file_loc):
+    for images, labels in set.take(1):
+        augmented_images = images.numpy()
+
+
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        plt.subplot(3, 3, i + 1)
+        plt.imshow(augmented_images[i])
+        plt.axis("off")
+    plt.savefig(file_loc)
+
 
 
 

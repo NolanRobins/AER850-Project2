@@ -29,8 +29,8 @@ def predict_image(model, image_path):
     draw_image = ImageDraw.Draw(input_image)
     draw_image.text((1400,1700), "Large: " + str(round(predictions[0][0] * 100)) + "%", font = set_font, fill = "green")
     draw_image.text((1400,1775), "Medium: " + str(round(predictions[0][1] * 100)) + "%", font = set_font, fill = "green")
-    draw_image.text((1400,1850), "Small: " + str(round(predictions[0][3] * 100)) + "%", font = set_font, fill = "green")
-    draw_image.text((1400,1925), "None: " + str(round(predictions[0][2] * 100)) + "%", font = set_font, fill = "green")
+    draw_image.text((1400,1850), "Small: " + str(round(predictions[0][2] * 100)) + "%", font = set_font, fill = "green")
+    draw_image.text((1400,1925), "None: " + str(round(predictions[0][3] * 100)) + "%", font = set_font, fill = "green")
     filename = image_path.split('/')[-1]
 
     input_image.save("ModelOutput/Predictions/Pred_" + filename, "jpeg", quality = 75)
