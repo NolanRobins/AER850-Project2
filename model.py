@@ -7,6 +7,7 @@ from keras.preprocessing.image import ImageDataGenerator
 import keras_cv
 import PIL
 from PIL import Image, ImageDraw, ImageFont
+import predict_model
 
 BATCH_SIZE = 32
 
@@ -25,7 +26,7 @@ def main():
 
     train_preprocessor = tf.keras.Sequential([
         layers.RandomTranslation(0, (-0.2,0.2), seed = 852),
-        keras_cv.layers.RandomShear(x_factor=0.3, y_factor=0.3, seed = 852),
+        keras_cv.layers.RandomShear(x_factor=0.1, y_factor=0.1, seed = 852),
         layers.GaussianNoise(0.3, seed = 727),
         layers.RandomZoom((-0.15, 0.15), (-0.15, 0.15), fill_mode = "constant", seed = 852),
         # layers.RandomBrightness((0,0.5), seed = 852),
@@ -42,7 +43,7 @@ def main():
     train_set = tf.keras.utils.image_dataset_from_directory(
         "Data/Train",
         labels="inferred",
-        class_names=["Large", "Medium", "None", "Small"],
+        class_names=["Large", "Medium", "Small", "None"],
         label_mode="categorical",
         image_size=(100, 100),
         color_mode="rgb",
@@ -61,6 +62,7 @@ def main():
         labels="inferred",
         label_mode="categorical",
         image_size=(100,100),
+        class_names=["Large", "Medium", "Small", "None"],
         color_mode="rgb",
         batch_size = BATCH_SIZE,
         seed = 852,
@@ -140,7 +142,7 @@ def main():
 
     # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.00001)
 
-    epochs = 45
+    epochs = 60
     history = model.fit(
     train_set,
     validation_data=val_set,
@@ -178,45 +180,19 @@ def main():
     # Print the validation accuracy
     print("Validation Accuracy:", validation_accuracy)
 
-    predict_image(model, "Data/Train/Medium/Crack__20180419_05_06_26,199.bmp")
+    predict_model.predict_image(model, "Data/Train/Medium/Crack__20180419_05_06_26,199.bmp")
     execute_predict()
     
-
-def predict_image(model, image_path):
-    labels = ["Large", "Medium", "None", "Small"]
-    input_image = Image.open(image_path)
-    test_img = keras.utils.load_img(image_path, target_size=(100, 100))
-    img_array = keras.utils.img_to_array(test_img)
-    img_array = tf.expand_dims(img_array, 0) 
-    img_array = img_array/255.
-    predictions = model.predict(img_array)
-    for i,prob in enumerate(predictions[0]):
-        print(labels[i], ": ", prob)
-
-    # set_font = ImageFont.load_default()
-    # set_font.size = 100
-
-    set_font = ImageFont.truetype("UbuntuMono-R.ttf", size=100)
-    
-
-    draw_image = ImageDraw.Draw(input_image)
-    draw_image.text((1400,1700), "Large: " + str(round(predictions[0][0] * 100)), font = set_font, fill = "green")
-    draw_image.text((1400,1750), "Medium: " + str(round(predictions[0][1] * 100)), font = set_font, fill = "green")
-    draw_image.text((1400,1800), "Small: " + str(round(predictions[0][3] * 100)), font = set_font, fill = "green")
-    draw_image.text((1400,1850), "None: " + str(round(predictions[0][2] * 100)), font = set_font, fill = "green")
-    filename = image_path.split('/')[-1]
-
-    input_image.save("ModelOutput/Predictions/Pred_" + filename)
 
 
 
 def execute_predict():
     loaded_model = keras.models.load_model("ModelOutput/modeled.keras")
-    predict_image(loaded_model, "Data/Test/Medium/Crack__20180419_06_19_09,915.bmp")
-    predict_image(loaded_model, "Data/Test/Large/Crack__20180419_13_29_14,846.bmp")
+    predict_model.predict_image(loaded_model, "Data/Test/Medium/Crack__20180419_06_19_09,915.bmp")
+    predict_model.predict_image(loaded_model, "Data/Test/Large/Crack__20180419_13_29_14,846.bmp")
     
 
 
 if __name__ == "__main__":
-    execute_predict()
+    main()
 
