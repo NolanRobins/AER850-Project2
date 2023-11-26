@@ -120,6 +120,7 @@ def main():
     model.build((BATCH_SIZE, 100, 100, 3))
 
     model.summary()
+    keras.utils.plot_model(model, to_file = "ModelOutput/model_figure.png", show_shapes=True, show_layer_activations=True)
 
     # reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_accuracy', factor=0.2, patience=5, min_lr=0.00001)
 
